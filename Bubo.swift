@@ -405,13 +405,13 @@ struct Panel: View {
     }
 }
 
-/// Which column the TOP APPS list is ranked by. Defaults to cpu, so the list
-/// opens the same way it always has.
+/// Which column the TOP APPS list is locked to. nil means free — the list keeps
+/// its natural cpu order, the same way it opens.
 enum AppSort { case proc, cpu, mem }
 
 struct PanelContent: View {
     @ObservedObject var m: Monitor
-    @State private var sort: AppSort = .cpu
+    @State private var sort: AppSort? = nil
 
     var body: some View {
         // CPU → memory → apps first: naming the heavy app is what this app is for,
@@ -661,7 +661,7 @@ struct PanelContent: View {
     // MARK: processes
 
     // one set of widths for both the header and the rows, so the columns line up
-    private let procW: CGFloat = 34, cpuW: CGFloat = 52, memW: CGFloat = 58, quitW: CGFloat = 20
+    private let procW: CGFloat = 46, cpuW: CGFloat = 52, memW: CGFloat = 58, quitW: CGFloat = 20
 
     private var appSection: some View {
         let shown = Array(sortedApps.prefix(8))
@@ -706,25 +706,34 @@ struct PanelContent: View {
         case .proc: return m.s.apps.sorted { $0.procs > $1.procs }
         case .cpu:  return m.s.apps.sorted { $0.cpu > $1.cpu }
         case .mem:  return m.s.apps.sorted { $0.memMB > $1.memMB }
+        case nil:   return m.s.apps            // free — natural cpu order
         }
     }
 
     private func sortValue(_ a: AppUsage) -> Double {
         switch sort {
-        case .proc: return Double(a.procs)
-        case .cpu:  return a.cpu
-        case .mem:  return a.memMB
+        case .proc:     return Double(a.procs)
+        case .mem:      return a.memMB
+        case .cpu, nil: return a.cpu
         }
     }
 
-    /// A clickable column header — same dim look as the other section labels,
-    /// trailing-aligned over the values under it. Tapping it sorts by that column.
+    /// A clickable column header. Tapping it locks the sort to that column and
+    /// shows a ▾; tapping the locked column again frees it. Trailing-aligned over
+    /// the values under it, same dim look as the other section labels.
     private func sortHead(_ text: String, _ key: AppSort, _ width: CGFloat) -> some View {
-        Button { sort = key } label: {
-            Text(text)
-                .font(.system(size: 9, weight: .bold, design: .rounded))
-                .foregroundStyle(.tertiary)
-                .frame(width: width, alignment: .trailing)
+        Button { sort = (sort == key) ? nil : key } label: {
+            HStack(spacing: 2) {
+                Text(text).lineLimit(1).fixedSize()
+                // always reserve the arrow's slot, only toggle its visibility, so
+                // locking a column doesn't nudge the header widths
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 7, weight: .bold))
+                    .opacity(sort == key ? 1 : 0)
+            }
+            .font(.system(size: 9, weight: .bold, design: .rounded))
+            .foregroundStyle(.tertiary)
+            .frame(width: width, alignment: .trailing)
         }
         .buttonStyle(.plain)
     }
