@@ -67,6 +67,10 @@ let loadFillColors = loadNSColors.map(Color.init(nsColor:))       // shapes
 func loadColor(_ pct: Double) -> Color { loadColors[loadLevel(pct)] }
 func loadFill(_ pct: Double) -> Color { loadFillColors[loadLevel(pct)] }
 
+/// Read from the bundle, which mk-app.sh stamps from the git tag — so the panel
+/// always shows the version you actually installed, not one hardcoded in source.
+let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+
 func freqText(_ mhz: Int32) -> String {
     mhz >= 1000 ? String(format: "%.1f GHz", Double(mhz) / 1000) : "\(mhz) MHz"
 }
@@ -434,7 +438,12 @@ struct PanelContent: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 1) {
-                Text("Bubo").font(.system(size: 13, weight: .semibold, design: .rounded))
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text("Bubo").font(.system(size: 13, weight: .semibold, design: .rounded))
+                    Text(appVersion)
+                        .font(.system(size: 9, weight: .medium, design: .rounded).monospacedDigit())
+                        .foregroundStyle(.tertiary)
+                }
                 // total power lives in POWER RAILS; repeating it here was noise
                 Detail(text: "\(m.chip)  ·  \(m.s.cores.count) cores")
             }
