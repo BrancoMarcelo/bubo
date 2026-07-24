@@ -405,8 +405,13 @@ struct Panel: View {
     }
 }
 
+/// Which column the TOP APPS list is ranked by. Defaults to cpu, so the list
+/// opens the same way it always has.
+enum AppSort { case proc, cpu, mem }
+
 struct PanelContent: View {
     @ObservedObject var m: Monitor
+    @State private var sort: AppSort = .cpu
 
     var body: some View {
         // CPU → memory → apps first: naming the heavy app is what this app is for,
@@ -655,26 +660,32 @@ struct PanelContent: View {
 
     // MARK: processes
 
+    // one set of widths for both the header and the rows, so the columns line up
+    private let procW: CGFloat = 34, cpuW: CGFloat = 52, memW: CGFloat = 58, quitW: CGFloat = 20
+
     private var appSection: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack {
-                SectionLabel(text: "TOP APPS")
-                Spacer()
-                SectionLabel(text: "PROC   CPU      MEM")
+        let shown = Array(sortedApps.prefix(8))
+        // the sorted column sets the bar scale, so the bar always shows the ranking
+        // you asked for; its colour still reads CPU heat regardless of sort
+        let top = max(shown.map(sortValue).max() ?? 1, 1)
+        return VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 0) {
+                SectionLabel(text: "TOP APPS").frame(maxWidth: .infinity, alignment: .leading)
+                sortHead("PROC", .proc, procW)
+                sortHead("CPU", .cpu, cpuW)
+                sortHead("MEM", .mem, memW)
+                Spacer().frame(width: quitW)     // the quit-button column
             }
             .padding(.horizontal, 4)
-            .padding(.trailing, 20)     // the quit-button column
 
-            // heaviest app sets the bar scale, so the ranking stays readable when idle
-            let top = max(m.s.apps.first?.cpu ?? 1, 1)
-            ForEach(m.s.apps.prefix(8)) { a in
+            ForEach(shown) { a in
                 HStack(spacing: 0) {
                     Text(a.id).lineLimit(1).truncationMode(.middle)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("\(a.procs)").frame(width: 34, alignment: .trailing).foregroundStyle(.secondary)
-                    Text(String(format: "%.1f%%", a.cpu)).frame(width: 52, alignment: .trailing)
+                    Text("\(a.procs)").frame(width: procW, alignment: .trailing).foregroundStyle(.secondary)
+                    Text(String(format: "%.1f%%", a.cpu)).frame(width: cpuW, alignment: .trailing)
                         .foregroundStyle(loadColor(a.cpu))
-                    Text(memText(a.memMB)).frame(width: 58, alignment: .trailing).foregroundStyle(.secondary)
+                    Text(memText(a.memMB)).frame(width: memW, alignment: .trailing).foregroundStyle(.secondary)
                     quitButton(a)
                 }
                 .font(.system(size: 11, design: .rounded).monospacedDigit())
@@ -683,11 +694,39 @@ struct PanelContent: View {
                     GeometryReader { g in
                         RoundedRectangle(cornerRadius: 4)
                             .fill(loadFillColors[loadLevel(a.cpu)].opacity(0.17))
-                            .frame(width: g.size.width * a.cpu / top)
+                            .frame(width: g.size.width * sortValue(a) / top)
                     }
                 }
             }
         }
+    }
+
+    private var sortedApps: [AppUsage] {
+        switch sort {
+        case .proc: return m.s.apps.sorted { $0.procs > $1.procs }
+        case .cpu:  return m.s.apps.sorted { $0.cpu > $1.cpu }
+        case .mem:  return m.s.apps.sorted { $0.memMB > $1.memMB }
+        }
+    }
+
+    private func sortValue(_ a: AppUsage) -> Double {
+        switch sort {
+        case .proc: return Double(a.procs)
+        case .cpu:  return a.cpu
+        case .mem:  return a.memMB
+        }
+    }
+
+    /// A clickable column header — same dim look as the other section labels,
+    /// trailing-aligned over the values under it. Tapping it sorts by that column.
+    private func sortHead(_ text: String, _ key: AppSort, _ width: CGFloat) -> some View {
+        Button { sort = key } label: {
+            Text(text)
+                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .foregroundStyle(.tertiary)
+                .frame(width: width, alignment: .trailing)
+        }
+        .buttonStyle(.plain)
     }
 
     /// terminate() is the graceful quit — the app still gets to prompt about
