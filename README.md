@@ -44,7 +44,7 @@ no background daemon, a ~280 KB download.
 | Section | What it shows |
 |---|---|
 | **Menu bar** | Green / yellow / red dot for overall load, plus live `CPU % · MEM %` |
-| **Top apps** | The 8 heaviest processes, grouped per app, with a per-row **quit** button and a bar you can eyeball |
+| **Top apps** | The 8 heaviest processes, grouped per app, with a per-row **quit** button and a bar you can eyeball. Tap the **PROC / CPU / MEM** header to sort by that column (a ▾ marks the locked one; tap again to unlock) |
 | **CPU** | Overall %, per-core bars, E / P cluster usage + frequency, average temp, die hotspot, package power |
 | **Memory** | Used / total, DRAM read+write bandwidth, swap |
 | **GPU** | Usage, frequency, temperature, power |
