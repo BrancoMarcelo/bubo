@@ -1,0 +1,54 @@
+name: release
+# Push a version tag → GitHub builds the DMG and publishes it as a release.
+#   git tag v2.0 && git push origin v2.0
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write        # gh release create needs to write to the repo
+
+jobs:
+  build:
+    runs-on: macos-14    # Apple Silicon runner
+    env:
+      TAP_TOKEN: ${{ secrets.TAP_TOKEN }}   # read in the cask-bump step's `if`
+    steps:
+      - uses: actions/checkout@v4
+
+      # skip --selftest: a CI VM has no real battery/fan/power sensors to assert on
+      - name: Build DMG
+        run: BUBO_NO_SELFTEST=1 sh pack.sh
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" Bubo.dmg \
+            --title "Bubo $GITHUB_REF_NAME" \
+            --notes "Drag **Bubo** to Applications.
+
+          First launch: right-click Bubo.app → **Open** → **Open** (ad-hoc signed, not notarized).
+          Then right-click the menu-bar item → **Open at Login** so it's always there."
+
+      # Point the Homebrew cask at the new version + DMG hash, so `brew upgrade`
+      # picks it up. Needs a token with contents:write on fajarhide/homebrew-tap,
+      # stored as the TAP_TOKEN secret. Missing secret → step is skipped and the
+      # release still ships; bump the cask by hand that once.
+      - name: Bump Homebrew cask
+        if: ${{ env.TAP_TOKEN != '' }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"                      # v1.0 -> 1.0
+          SHA=$(shasum -a 256 Bubo.dmg | awk '{print $1}')
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/fajarhide/homebrew-tap.git" tap
+          cd tap
+          # BSD sed (macOS runner). Only the version and sha256 lines change.
+          sed -i '' -E "s/version \"[^\"]+\"/version \"${VERSION}\"/; s/sha256 \"[^\"]+\"/sha256 \"${SHA}\"/" Casks/bubo.rb
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "cask already at ${VERSION}, nothing to bump"
+          else
+            git commit -am "bubo ${VERSION}"
+            git push
+          fi
