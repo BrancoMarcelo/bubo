@@ -411,7 +411,12 @@ enum AppSort { case proc, cpu, mem }
 
 struct PanelContent: View {
     @ObservedObject var m: Monitor
-    @State private var sort: AppSort? = nil
+    @State private var sort: AppSort?
+
+    init(m: Monitor, initialSort: AppSort? = nil) {
+        self.m = m
+        _sort = State(initialValue: initialSort)   // snapshots lock a column to show the ▾
+    }
 
     var body: some View {
         // CPU → memory → apps first: naming the heavy app is what this app is for,
@@ -967,7 +972,7 @@ enum Bubo {
     appearance.performAsCurrentDrawingAppearance {
         // explicit background: windowBackgroundColor resolves against the app
         // appearance, not the renderer's, and came out white behind dark-mode text
-        let r = ImageRenderer(content: PanelContent(m: m)
+        let r = ImageRenderer(content: PanelContent(m: m, initialSort: .cpu)
             .environment(\.colorScheme, dark ? .dark : .light)
             .background(dark ? Color(red: 0.13, green: 0.13, blue: 0.14) : .white))
         r.scale = 2
