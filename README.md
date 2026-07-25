@@ -37,7 +37,7 @@ rest: GPU, fan, battery, temperatures, power, network, and disk.
 Activity Monitor lives in a window you have to open and hunt through. Bubo puts
 the heaviest apps one click away in the menu bar, and quits the culprit without
 opening anything else. Two Swift files and a vendored sensor layer: no Electron,
-no background daemon, a ~280 KB download.
+no background daemon.
 
 ## Features
 
