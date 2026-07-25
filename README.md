@@ -20,6 +20,16 @@
 </p>
 
 <p align="center">
+  <video src="https://github.com/fajarhide/bubo/raw/main/assets/demo.mp4" width="360" controls muted loop>
+    Your browser can't play this video — <a href="assets/demo.mp4">download the demo</a>.
+  </video>
+</p>
+
+<p align="center">
+  <sub>Bubo in the menu bar — click the dot for the full panel.</sub>
+</p>
+
+<p align="center">
   <img src="assets/demo.png" alt="Bubo popover in light mode" width="332">
   <img src="assets/demo-dark.png" alt="Bubo popover in dark mode" width="332">
 </p>
@@ -125,20 +135,6 @@ git tag v1.0 && git push origin v1.0
 Pushing a `v*` tag runs [`.github/workflows/release.yml`](.github/workflows/release.yml),
 which builds both DMGs (Apple Silicon + Intel) on an Apple Silicon runner, attaches
 them to a new release, and bumps the Homebrew cask.
-
-## How the sensors work
-
-CPU %, memory, swap, processes, battery, network and disk I/O all use **public
-macOS APIs** (`host_statistics`, `sysctl`, IOKit, `ps`) and live in
-[`Sensors.swift`](Sensors.swift).
-
-Power draw, temperatures, fan RPM, GPU usage, and DRAM bandwidth have no public
-API. That layer (`IOReport` plus `AppleSMC` / `IOHIDEventSystemClient`) is
-vendored unmodified from [ryyansafar/MacMonitor](https://github.com/ryyansafar/MacMonitor)
-(MIT); see [`sensors/README.md`](sensors/README.md). None of it needs root. This
-layer targets Apple Silicon — keys a chip doesn't expose (DRAM power and PSTR on
-an M1, or every one of them on Intel) are hidden rather than printed as a fake
-`0.00 W`. See [Apple Silicon & Intel](#apple-silicon--intel) for what that leaves.
 
 ## License
 
