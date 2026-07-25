@@ -59,6 +59,26 @@ Right-click the menu-bar item for **Open at Login**, Activity Monitor, and Quit.
 Sampling runs on a background queue and the popover is built at launch, so
 clicking it opens instantly.
 
+## Apple Silicon & Intel
+
+Each Mac gets its own native build (no Rosetta); `brew install` and the download
+page pick the right one.
+
+- **Apple Silicon** (M1–M5) — the full panel, every sensor listed above.
+- **Intel** — the private power / temperature / fan / GPU / cluster / DRAM
+  channels don't exist on Intel, so those panels hide and Bubo shows the
+  essentials: CPU, memory, top apps, battery, network, and disk. Both builds
+  follow your system appearance, light and dark.
+
+<p align="center">
+  <img src="assets/demo-intel.png" alt="Bubo on Intel, light mode" width="332">
+  <img src="assets/demo-intel-dark.png" alt="Bubo on Intel, dark mode" width="332">
+</p>
+
+<p align="center">
+  <sub>On Intel the sensor-only panels drop away — shown here light and dark.</sub>
+</p>
+
 ## Install
 
 ### Homebrew
@@ -87,8 +107,8 @@ there. No `sudo`, no kernel extension, no login daemon.
 Needs the Xcode command-line tools (`swiftc` and `clang`, via `xcode-select --install`).
 
 ```sh
-./build.sh    # compile and install into ~/Applications
-./pack.sh     # build a shareable Bubo.dmg
+./build.sh    # compile and install into ~/Applications (native arch)
+./pack.sh     # build the shareable DMGs — one per arch
 ```
 
 `mk-app.sh <dest>` is the shared compile step both scripts call.
@@ -102,7 +122,8 @@ git tag v1.0 && git push origin v1.0
 ```
 
 Pushing a `v*` tag runs [`.github/workflows/release.yml`](.github/workflows/release.yml),
-which builds the DMG on an Apple Silicon runner and attaches it to a new release.
+which builds both DMGs (Apple Silicon + Intel) on an Apple Silicon runner, attaches
+them to a new release, and bumps the Homebrew cask.
 
 ## How the sensors work
 
@@ -113,14 +134,10 @@ macOS APIs** (`host_statistics`, `sysctl`, IOKit, `ps`) and live in
 Power draw, temperatures, fan RPM, GPU usage, and DRAM bandwidth have no public
 API. That layer (`IOReport` plus `AppleSMC` / `IOHIDEventSystemClient`) is
 vendored unmodified from [ryyansafar/MacMonitor](https://github.com/ryyansafar/MacMonitor)
-(MIT); see [`sensors/README.md`](sensors/README.md). None of it needs root. Keys
-a given chip doesn't expose (DRAM power and PSTR on an M1, for example) aren't
-shown, instead of printed as a fake `0.00 W`.
-
-This layer targets Apple Silicon. The Intel build runs natively, but Intel Macs
-expose none of these channels, so the power, temperature, fan, GPU, cluster, ANE,
-and DRAM-bandwidth panels stay hidden there — CPU, memory, top apps, battery,
-network, and disk (all public-API) work the same on both.
+(MIT); see [`sensors/README.md`](sensors/README.md). None of it needs root. This
+layer targets Apple Silicon — keys a chip doesn't expose (DRAM power and PSTR on
+an M1, or every one of them on Intel) are hidden rather than printed as a fake
+`0.00 W`. See [Apple Silicon & Intel](#apple-silicon--intel) for what that leaves.
 
 ## License
 

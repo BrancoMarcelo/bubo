@@ -172,7 +172,7 @@ final class Sampler: @unchecked Sendable {
     /// throughput history for the network / disk sparklines, same 2-minute window
     @Published var ioHistory: [(nd: Double, nu: Double, dr: Double, dw: Double)] = []
 
-    let chip = chipName()
+    var chip = chipName()   // var so the --intel snapshot can relabel it
     let clusters = clusterSizes()
     /// Called after every sample so the status item can refresh its title.
     var onUpdate: (() -> Void)?
@@ -426,11 +426,11 @@ struct PanelContent: View {
             cpuSection
             memorySection
             appSection
-            gpuSection
-            if m.s.io.fanRPM > 0 { fanSection }        // hidden on fanless models
+            if m.s.io.gpuFreqMHz > 0 { gpuSection }    // hidden on Intel (no IOReport GPU Stats)
+            if m.s.io.fanRPM > 0 { fanSection }         // hidden on fanless models
             if let b = m.s.battery { batterySection(b) }
             ioSection
-            powerSection
+            if m.s.totalWatts > 0 { powerSection }      // hidden on Intel (no power rails)
             optimizeSection
         }
         .padding(.horizontal, 13)
@@ -479,7 +479,7 @@ struct PanelContent: View {
             SectionHead(title: "CPU", value: "\(Int(m.s.cpu))%", color: loadColor(m.s.cpu), big: true)
             Bar(v: m.s.cpu / 100, color: loadFill(m.s.cpu), height: 7)
             cores
-            Facts(clusterFacts, keyWidth: 26)
+            if !clusterFacts.isEmpty { Facts(clusterFacts, keyWidth: 26) }   // empty on Intel
             Facts(thermalFacts + pressureFacts)
             chart
         }
@@ -488,8 +488,14 @@ struct PanelContent: View {
     /// E/P/S split from IOReport, with the core counts sysctl reports per tier.
     private var clusterFacts: [Facts.Item] {
         let io = m.s.io
-        var f = [Facts.Item("E \(m.clusters.e)×", "\(Int(io.eClusterActive))%  \(freqText(io.eClusterFreqMHz))"),
-                 Facts.Item("P \(m.clusters.p)×", "\(Int(io.pClusterActive))%  \(freqText(io.pClusterFreqMHz))")]
+        // each tier only shows when it reports a frequency — on Intel none do
+        var f: [Facts.Item] = []
+        if io.eClusterFreqMHz > 0 {
+            f.append(.init("E \(m.clusters.e)×", "\(Int(io.eClusterActive))%  \(freqText(io.eClusterFreqMHz))"))
+        }
+        if io.pClusterFreqMHz > 0 {
+            f.append(.init("P \(m.clusters.p)×", "\(Int(io.pClusterActive))%  \(freqText(io.pClusterFreqMHz))"))
+        }
         if io.sClusterFreqMHz > 0 {     // M5+ only
             f.append(.init("S", "\(Int(io.sClusterActive))%  \(freqText(io.sClusterFreqMHz))"))
         }
@@ -593,12 +599,20 @@ struct PanelContent: View {
                         value: String(format: "%.1f / %.0f GB", m.s.ramUsed, m.s.ramTotal),
                         color: loadColor(m.s.ramPercent))
             Bar(v: m.s.ramPercent / 100, color: loadFill(m.s.ramPercent))
-            Facts([.init("read", rateText(m.s.dram.read)),
-                   .init("write", rateText(m.s.dram.write)),
-                   // heavy swap is the usual cause of a slow Mac, so it stays loud
-                   .init("swap", String(format: "%.1f GB", m.s.swapUsed),
-                         m.s.swapUsed > 2 ? loadColors[1] : nil)])
+            Facts(memoryFacts)
         }
+    }
+
+    private var memoryFacts: [Facts.Item] {
+        var f: [Facts.Item] = []
+        if m.s.io.dramReadBytes > 0 {   // DRAM bandwidth is IOReport — Apple Silicon only
+            f.append(.init("read", rateText(m.s.dram.read)))
+            f.append(.init("write", rateText(m.s.dram.write)))
+        }
+        // heavy swap is the usual cause of a slow Mac, so it stays loud
+        f.append(.init("swap", String(format: "%.1f GB", m.s.swapUsed),
+                       m.s.swapUsed > 2 ? loadColors[1] : nil))
+        return f
     }
 
     // MARK: battery
@@ -941,7 +955,8 @@ enum Bubo {
             if CommandLine.arguments.contains("--selftest") { selfTest(); exit(0) }
             if let i = CommandLine.arguments.firstIndex(of: "--snapshot") {
                 snapshot(to: CommandLine.arguments[i + 1],
-                         dark: CommandLine.arguments.contains("--dark")); exit(0)
+                         dark: CommandLine.arguments.contains("--dark"),
+                         intel: CommandLine.arguments.contains("--intel")); exit(0)
             }
             if CommandLine.arguments.contains("--bench") { bench(); exit(0) }
             if let i = CommandLine.arguments.firstIndex(of: "--icon") {
@@ -959,12 +974,18 @@ enum Bubo {
 
 /// Render the panel straight to a PNG. `screencapture` of the real popover needs
 /// Screen Recording + Accessibility grants; ImageRenderer needs neither.
-@MainActor func snapshot(to path: String, dark: Bool = false) {
+@MainActor func snapshot(to path: String, dark: Bool = false, intel: Bool = false) {
     NSApplication.shared.setActivationPolicy(.accessory)
     let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)!
     NSApplication.shared.appearance = appearance
     let m = Monitor()
     RunLoop.main.run(until: Date(timeIntervalSinceNow: 12))   // ~6 ticks, enough for a chart
+
+    // Preview the Intel layout on an Apple Silicon box: zero the private-sensor
+    // data the way an Intel Mac (no IOReport channels) leaves it, so the panels
+    // gated on those values hide. The main-thread timer can't fire during the
+    // synchronous render below, so this state survives to the snapshot.
+    if intel { m.s.io = IOReportData(); m.s.dram = Counters(); m.chip = "Intel" }
 
     var png: Data?
     // the adaptive load colours resolve against the *drawing* appearance, so the
