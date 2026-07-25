@@ -20,16 +20,6 @@
 </p>
 
 <p align="center">
-  <video src="https://github.com/fajarhide/bubo/raw/main/assets/demo.mp4" width="360" controls muted loop>
-    Your browser can't play this video — <a href="assets/demo.mp4">download the demo</a>.
-  </video>
-</p>
-
-<p align="center">
-  <sub>Bubo in the menu bar — click the dot for the full panel.</sub>
-</p>
-
-<p align="center">
   <img src="assets/demo.png" alt="Bubo popover in light mode" width="332">
   <img src="assets/demo-dark.png" alt="Bubo popover in dark mode" width="332">
 </p>
