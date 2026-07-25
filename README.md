@@ -20,6 +20,12 @@
 </p>
 
 <p align="center">
+  <video src="https://bubo.weekndlabs.com/demo.mp4" width="360" controls muted loop playsinline>
+    <a href="https://bubo.weekndlabs.com/demo.mp4">▶ Watch the demo</a>
+  </video>
+</p>
+
+<p align="center">
   <img src="assets/demo.png" alt="Bubo popover in light mode" width="332">
   <img src="assets/demo-dark.png" alt="Bubo popover in dark mode" width="332">
 </p>
