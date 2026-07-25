@@ -917,7 +917,7 @@ func dotImage(_ color: NSColor) -> NSImage? {
         let menu = NSMenu()
         menu.addItem(withTitle: "Activity Monitor", action: #selector(openActivityMonitor), keyEquivalent: "")
             .target = self
-        let login = menu.addItem(withTitle: "Open at Login", action: #selector(toggleLogin), keyEquivalent: "")
+        let login = menu.addItem(withTitle: "Keep Bubo in the menu bar", action: #selector(toggleLogin), keyEquivalent: "")
         login.target = self
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(.separator())
@@ -941,8 +941,8 @@ func dotImage(_ color: NSColor) -> NSImage? {
         } catch {
             // most often: the app is still on the DMG / in Downloads, not installed
             let a = NSAlert()
-            a.messageText = "Couldn't change the login item"
-            a.informativeText = "Move Bubo to your Applications folder first, then try again."
+            a.messageText = "Bubo needs to be in Applications first"
+            a.informativeText = "Nothing changed. Move Bubo into your Applications folder, then turn this on again — it just keeps Bubo in your menu bar after each restart, and you can switch it off here or in System Settings anytime."
             a.runModal()
         }
     }

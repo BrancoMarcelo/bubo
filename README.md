@@ -54,7 +54,7 @@ no background daemon.
 | **Power rails** | CPU · GPU · ANE · DRAM · System, whichever your chip exposes |
 | **Optimize** | Purge disk cache, or quit every heavy app at once (with confirmation) |
 
-Right-click the menu-bar item for **Open at Login**, Activity Monitor, and Quit.
+Right-click the menu-bar item for **Keep Bubo in the menu bar**, Activity Monitor, and Quit.
 
 Sampling runs on a background queue and the popover is built at launch, so
 clicking it opens instantly.
@@ -99,8 +99,9 @@ Gatekeeper quarantine flag on install and the app launches straight away.
 3. First launch only: right-click `Bubo.app` → **Open** → **Open**.
    *(Gatekeeper asks once, since it isn't notarized.)*
 
-Either way, right-click the menu-bar item → **Open at Login** so it's always
-there. No `sudo`, no kernel extension, no login daemon.
+Either way, right-click the menu-bar item → **Keep Bubo in the menu bar** so it's
+always there. It's a standard macOS login item you can switch off anytime (here or
+in System Settings) — no `sudo`, no kernel extension, no login daemon.
 
 ## Build from source
 
