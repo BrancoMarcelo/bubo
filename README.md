@@ -20,9 +20,7 @@
 </p>
 
 <p align="center">
-  <video src="https://bubo.weekndlabs.com/demo.mp4" width="360" controls muted loop playsinline>
-    <a href="https://bubo.weekndlabs.com/demo.mp4">▶ Watch the demo</a>
-  </video>
+  <img src="assets/demo.gif" alt="Bubo demo" width="720">
 </p>
 
 <p align="center">
