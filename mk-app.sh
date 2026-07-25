@@ -18,16 +18,27 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp assets/Bubo.icns "$APP/Contents/Resources/"
 
-# vendored sensor layer (MacMonitor, MIT — see sensors/README.md)
-clang -fobjc-arc -O2 -c -Isensors -o "$OBJ/IOReportWrapper.o" sensors/IOReportWrapper.m
-clang -O2 -c -Isensors -o "$OBJ/SMC.o" sensors/SMC.c
+# Build one architecture, chosen by BUBO_ARCH (default: the host). The local dev
+# loop stays a single native slice; pack.sh sets BUBO_ARCH to ship a separate
+# .dmg per arch. On Apple Silicon the full sensor layer works; on Intel the
+# private IOReport/SMC channels this code reads don't exist, so those panels read
+# zero and hide — CPU/RAM/apps/battery/network/disk still work.
+ARCH="${BUBO_ARCH:-$(uname -m)}"
 
-# -lIOReport: private, ships only inside the dyld shared cache (no file on disk)
-swiftc -O -parse-as-library \
+# vendored sensor layer (MacMonitor, MIT — see sensors/README.md)
+clang -arch "$ARCH" -fobjc-arc -O2 -c -Isensors -o "$OBJ/IOReportWrapper.o" sensors/IOReportWrapper.m
+clang -arch "$ARCH" -O2 -c -Isensors -o "$OBJ/SMC.o" sensors/SMC.c
+
+# -lIOReport is private (dyld shared cache, no file on disk). Cross-compiling the
+# non-host arch has no stub to link against, so allow dynamic_lookup there.
+XLINK=""
+[ "$ARCH" = "$(uname -m)" ] || XLINK="-Xlinker -undefined -Xlinker dynamic_lookup"
+
+swiftc -O -parse-as-library -target "$ARCH-apple-macos13" \
   -import-objc-header sensors/Bridge.h \
   -o "$APP/Contents/MacOS/Bubo" \
   Bubo.swift Sensors.swift Logo.swift "$OBJ/IOReportWrapper.o" "$OBJ/SMC.o" \
-  -framework IOKit -lIOReport
+  -framework IOKit -lIOReport $XLINK
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -46,4 +57,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 codesign -s - --force "$APP"
-[ -n "$BUBO_NO_SELFTEST" ] || "$APP/Contents/MacOS/Bubo" --selftest
+# selftest only makes sense for a native build — a cross-arch slice can't run here
+if [ -z "$BUBO_NO_SELFTEST" ] && [ "$ARCH" = "$(uname -m)" ]; then
+  "$APP/Contents/MacOS/Bubo" --selftest
+fi

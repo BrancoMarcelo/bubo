@@ -15,7 +15,7 @@
 <p align="center">
   <a href="../../releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/fajarhide/bubo?label=download&color=brightgreen"></a>
   <img alt="Platform" src="https://img.shields.io/badge/macOS-13%2B-black?logo=apple">
-  <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple%20Silicon-native-blue">
+  <img alt="Architecture" src="https://img.shields.io/badge/Apple%20Silicon%20%2B%20Intel-native-blue">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-lightgrey">
 </p>
 
@@ -67,12 +67,14 @@ clicking it opens instantly.
 brew install fajarhide/tap/bubo
 ```
 
-Bubo is ad-hoc signed, not notarized, so the cask clears the Gatekeeper
-quarantine flag on install and the app launches straight away.
+Homebrew installs the build matching your Mac (Apple Silicon or Intel)
+automatically. Bubo is ad-hoc signed, not notarized, so the cask clears the
+Gatekeeper quarantine flag on install and the app launches straight away.
 
 ### Manual
 
-1. Download `Bubo.dmg` from the [latest release](../../releases/latest).
+1. From the [latest release](../../releases/latest), download the `.dmg` for your
+   Mac: **Bubo-apple-silicon.dmg** (M1/M2/M3…) or **Bubo-intel.dmg**.
 2. Open it and drag **Bubo** into **Applications**.
 3. First launch only: right-click `Bubo.app` → **Open** → **Open**.
    *(Gatekeeper asks once, since it isn't notarized.)*
@@ -114,6 +116,11 @@ vendored unmodified from [ryyansafar/MacMonitor](https://github.com/ryyansafar/M
 (MIT); see [`sensors/README.md`](sensors/README.md). None of it needs root. Keys
 a given chip doesn't expose (DRAM power and PSTR on an M1, for example) aren't
 shown, instead of printed as a fake `0.00 W`.
+
+This layer targets Apple Silicon. The Intel build runs natively, but Intel Macs
+expose none of these channels, so the power, temperature, fan, GPU, cluster, ANE,
+and DRAM-bandwidth panels stay hidden there — CPU, memory, top apps, battery,
+network, and disk (all public-API) work the same on both.
 
 ## License
 
